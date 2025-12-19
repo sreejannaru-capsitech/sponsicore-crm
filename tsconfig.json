@@ -1,0 +1,9 @@
+{
+  "compilerOptions": {
+    "types": ["node"],
+    "moduleResolution": "node",
+    "target": "esnext",
+    "module": "esnext",
+  },
+  "include": ["tests/**/*.ts", "playwright.config.ts"],
+}
