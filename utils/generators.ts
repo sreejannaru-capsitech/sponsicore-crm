@@ -1,0 +1,57 @@
+import { faker } from "@faker-js/faker";
+
+export type ContactFormData = {
+  fullName: string;
+  company: string;
+  email: string;
+  phone: string;
+  employees?: string;
+  message: string;
+};
+
+export function generateContactFormData(): ContactFormData {
+  const firstName = faker.person.firstName().replace(/[^A-Za-z]/g, "");
+  const lastName = faker.person.lastName().replace(/[^A-Za-z]/g, "");
+
+  return {
+    fullName: `${firstName} ${lastName}`,
+    company: faker.company.name(),
+    email: `${firstName.toLowerCase()}.official@chitthi.in`,
+    phone: `90${faker.number.int({ min: 6000000000, max: 9999999999 })}`,
+    employees: faker.number.int({ min: 1, max: 500 }).toString(),
+    message: faker.lorem.sentence(6),
+  };
+}
+
+export function formatDateTime(): string {
+  const now = new Date();
+  const twoWeeksLater = new Date();
+  twoWeeksLater.setDate(now.getDate() + 14);
+
+  // random timestamp between now and +14 days
+  const randomTime =
+    now.getTime() + Math.random() * (twoWeeksLater.getTime() - now.getTime());
+
+  const date = new Date(randomTime);
+
+  const pad = (n: number) => n.toString().padStart(2, "0");
+
+  const day = pad(date.getDate());
+  const month = pad(date.getMonth() + 1);
+  const year = date.getFullYear();
+
+  let hours = date.getHours();
+  const minutes = pad(date.getMinutes());
+  const ampm = hours >= 12 ? "PM" : "AM";
+
+  hours = hours % 12 || 12;
+
+  return `${day}/${month}/${year} ${pad(hours)}:${minutes} ${ampm}`;
+}
+
+export function generateUkCompanyNumber(): string {
+  const firstDigit = faker.helpers.arrayElement(["0", "1"]);
+  const rest = faker.string.numeric(7);
+
+  return firstDigit + rest;
+}

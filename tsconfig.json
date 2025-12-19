@@ -5,5 +5,10 @@
     "target": "esnext",
     "module": "esnext",
   },
-  "include": ["tests/**/*.ts", "playwright.config.ts"],
+  "include": [
+    "tests/**/*.ts",
+    "scripts/**/*.ts",
+    "utils/**/*.ts",
+    "playwright.config.ts",
+  ],
 }
