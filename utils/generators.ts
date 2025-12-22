@@ -55,3 +55,23 @@ export function generateUkCompanyNumber(): string {
 
   return firstDigit + rest;
 }
+
+export function getDateDDMMYYYY(
+  direction: "past" | "future",
+  daysRange = 14,
+): string {
+  const date = new Date();
+
+  const offset =
+    Math.floor(Math.random() * daysRange) * (direction === "future" ? 1 : -1);
+
+  date.setDate(date.getDate() + offset);
+
+  const pad = (n: number) => n.toString().padStart(2, "0");
+
+  const day = pad(date.getDate());
+  const month = pad(date.getMonth() + 1);
+  const year = date.getFullYear();
+
+  return `${day}/${month}/${year}`;
+}
