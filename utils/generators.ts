@@ -75,3 +75,19 @@ export function getDateDDMMYYYY(
 
   return `${day}/${month}/${year}`;
 }
+
+export function formatCurrencyGBP(amount: number): string {
+  const formatted = new Intl.NumberFormat("en-GB", {
+    style: "currency",
+    currency: "GBP",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(amount);
+
+  // Insert a space after £
+  return formatted.replace("£", "£ ");
+}
+
+export function slashToHyphen(date: string): string {
+  return date.replace(/\//g, "-");
+}

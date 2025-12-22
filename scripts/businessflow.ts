@@ -1,6 +1,10 @@
 import { faker } from "@faker-js/faker";
 import { expect, Page } from "@playwright/test";
-import { getDateDDMMYYYY } from "../utils/generators";
+import {
+  formatCurrencyGBP,
+  getDateDDMMYYYY,
+  slashToHyphen,
+} from "../utils/generators";
 
 type QuoteData = {
   date: string;
@@ -91,4 +95,53 @@ export async function createQuote(
 
   await expect(page.getByText("Quote saved successfully")).toBeVisible();
   return data;
+}
+
+export async function verifyQuoteCreation(
+  page: Page,
+  quote: "Create" | "Renew" | "Activate" | "Expand",
+  data: QuoteData,
+) {
+  // Calculations
+  const subTotal = formatCurrencyGBP(data.amount);
+  const vat = formatCurrencyGBP(data.amount * 0.2);
+  const total = formatCurrencyGBP(data.amount * 0.2 + data.amount);
+
+  // Go to History tab
+  await page.getByRole("tab", { name: "History" }).click();
+
+  await page.reload({ waitUntil: "networkidle" });
+  await expect(page.getByText("Quote Created").first()).toBeVisible();
+  await expect(page.getByText(total).first()).toBeVisible();
+
+  // Go to Quotes tab
+  await page.getByRole("tab", { name: "Quotes" }).click();
+
+  const quoteLink = page.locator('span[title="Click for quote details"]');
+  // Ensure quote row exists
+  await expect(quoteLink.first()).toBeVisible();
+  await quoteLink.first().click();
+
+  // Quote date check
+  await expect(page.getByText(slashToHyphen(data.date))).toBeVisible();
+
+  const subscription = ` (${slashToHyphen(data.start)} - ${slashToHyphen(data.end)})`;
+
+  if (quote == "Expand") {
+    await expect(page.getByText(quote + " Team" + subscription)).toBeVisible();
+  } else if (quote == "Renew") {
+    await expect(
+      page.getByText(quote + " Subscription" + subscription),
+    ).toBeVisible();
+  } else {
+    await expect(
+      page.getByText(quote + " Company" + subscription),
+    ).toBeVisible();
+  }
+  // No. of employee
+  await expect(page.getByText(data.emp.toString())).toBeVisible();
+  // Money check
+  await expect(page.getByText(subTotal).first()).toBeVisible();
+  await expect(page.getByText(vat).first()).toBeVisible();
+  await expect(page.getByText(total).first()).toBeVisible();
 }

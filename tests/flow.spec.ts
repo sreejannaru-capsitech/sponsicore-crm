@@ -9,7 +9,11 @@ import {
   updateCallback,
   changeStatus,
 } from "../scripts/leadflow";
-import { createQuote, enterBusinessPage } from "../scripts/businessflow";
+import {
+  createQuote,
+  enterBusinessPage,
+  verifyQuoteCreation,
+} from "../scripts/businessflow";
 
 test.describe("Create and Update Lead", () => {
   test("Contact lead", async ({ page }) => {
@@ -42,6 +46,7 @@ test.describe("Create and Update Lead", () => {
 test.describe("Business update", () => {
   test("Quote Creation", async ({ page, browser }) => {
     await enterBusinessPage(page, "14145072");
-    await createQuote(page, "Renew");
+    const data = await createQuote(page, "Create");
+    await verifyQuoteCreation(page, "Create", data);
   });
 });
