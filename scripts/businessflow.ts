@@ -5,6 +5,8 @@ import {
   getDateDDMMYYYY,
   slashToHyphen,
 } from "../utils/generators";
+import { logIn } from "../utils/helpers";
+import { acceptQuoteTempmail } from "../utils/mail-reader";
 
 type QuoteData = {
   date: string;
@@ -15,13 +17,7 @@ type QuoteData = {
 };
 
 export async function enterBusinessPage(page: Page, number: string | number) {
-  await page.goto("/login");
-  await page.getByLabel("Username").fill(process.env.ADMIN_USERNAME);
-  await page.getByLabel("Password").fill(process.env.ADMIN_PASSWORD);
-  await Promise.all([
-    page.waitForURL("**/dashboard"),
-    page.locator("//span[normalize-space()='Login']").click(),
-  ]);
+  await logIn(page);
 
   await page.goto("/business");
   // Check if navigation successfull.

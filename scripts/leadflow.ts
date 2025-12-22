@@ -7,7 +7,7 @@ import {
   generateUkCompanyNumber,
 } from "../utils/generators";
 import { readOtpFromTempmail } from "../utils/mail-reader";
-import { businessAlreadyExists } from "../utils/helpers";
+import { businessAlreadyExists, logIn } from "../utils/helpers";
 
 const pageURL = process.env.WEBSITE_URL;
 
@@ -131,13 +131,7 @@ export async function createComplianceTestLead(page: Page, browser: Browser) {
 }
 
 export async function enterLeadPage(page: Page, data: ContactFormData) {
-  await page.goto("/login");
-  await page.getByLabel("Username").fill(process.env.ADMIN_USERNAME);
-  await page.getByLabel("Password").fill(process.env.ADMIN_PASSWORD);
-  await Promise.all([
-    page.waitForURL("**/dashboard"),
-    page.locator("//span[normalize-space()='Login']").click(),
-  ]);
+  await logIn(page);
 
   await page.goto("/lead");
   // Check if navigation successfull.
@@ -242,15 +236,16 @@ export async function changeStatus(
 ) {
   await page.locator('button[title="Change Status"]').click();
 
+  let companyNo: string;
+
   if (status == "business") {
     const select = page.locator("#change-lead-status-form_status");
     await select.click();
     await select.press("Enter");
 
     let success = false;
-
     while (!success) {
-      const companyNo = generateUkCompanyNumber();
+      companyNo = generateUkCompanyNumber();
 
       // Open dropdown
       const b_select = page.locator("#change-lead-status-form_companyNo");
@@ -284,4 +279,6 @@ export async function changeStatus(
       }
     }
   }
+
+  return companyNo;
 }
