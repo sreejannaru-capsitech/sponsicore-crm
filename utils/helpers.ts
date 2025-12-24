@@ -15,6 +15,10 @@ export const closeNotification = async (page: Page) => {
   await page.locator("a.ant-notification-notice-close").click();
 };
 
+export const getUsername = (data: ContactFormData) => {
+  return data.fullName.split(" ")[0] + ".official";
+};
+
 export async function businessAlreadyExists(page: Page): Promise<boolean> {
   try {
     await page

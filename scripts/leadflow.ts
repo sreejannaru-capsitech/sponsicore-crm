@@ -6,11 +6,7 @@ import {
   generateUkCompanyNumber,
 } from "../utils/generators";
 import { readOtpFromTempmail } from "../utils/mail-reader";
-import {
-  businessAlreadyExists,
-  closeNotification,
-  logIn,
-} from "../utils/helpers";
+import { businessAlreadyExists, closeNotification, getUsername } from "../utils/helpers";
 
 const pageURL = process.env.WEBSITE_URL;
 
@@ -49,7 +45,7 @@ export async function createPricingQueryLead(page: Page, browser: Browser) {
   await expect(verifyButton).toBeVisible();
 
   const otp = await readOtpFromTempmail(browser, {
-    username: data.fullName.split(" ")[0] + ".official",
+    username: getUsername(data),
   });
 
   const digits = otp.split("");
@@ -104,7 +100,7 @@ export async function createComplianceTestLead(page: Page, browser: Browser) {
   await page.getByRole("button", { name: "Submit" }).click();
 
   const otp = await readOtpFromTempmail(browser, {
-    username: data.fullName.split(" ")[0] + ".official",
+    username: getUsername(data),
   });
 
   const digits = otp.split("");
