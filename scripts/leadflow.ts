@@ -1,7 +1,6 @@
 import { expect, Page, Browser } from "@playwright/test";
 import { faker } from "@faker-js/faker";
 import {
-  ContactFormData,
   formatDateTime,
   generateContactFormData,
   generateUkCompanyNumber,

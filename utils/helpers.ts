@@ -1,6 +1,5 @@
 import { expect, Page } from "@playwright/test";
 import { formatCurrencyGBP, slashToHyphen } from "../utils/generators";
-import { QuoteData, QuoteType } from "../scripts/businessflow";
 
 export async function logIn(page: Page) {
   await page.goto("/login");

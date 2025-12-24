@@ -1,14 +1,5 @@
 import { faker } from "@faker-js/faker";
 
-export type ContactFormData = {
-  fullName: string;
-  company: string;
-  email: string;
-  phone: string;
-  employees?: string;
-  message: string;
-};
-
 export function generateContactFormData(): ContactFormData {
   const firstName = faker.person.firstName().replace(/[^A-Za-z]/g, "");
   const lastName = faker.person.lastName().replace(/[^A-Za-z]/g, "");
