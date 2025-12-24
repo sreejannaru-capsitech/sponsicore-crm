@@ -33,7 +33,7 @@ export async function createContactQueryLead(page: Page) {
 }
 
 export async function createPricingQueryLead(page: Page, browser: Browser) {
-  await page.goto(pageURL);
+  await page.goto(`${pageURL}/pricing`);
   await page.getByRole("button", { name: "Get Started" }).click();
 
   const data = generateContactFormData();
@@ -42,7 +42,6 @@ export async function createPricingQueryLead(page: Page, browser: Browser) {
   await page.locator("#company_name").fill(data.company);
   await page.locator("#email").fill(data.email);
   await page.locator("input[type='tel']").fill(data.phone);
-  await page.locator("#message").fill(data.message);
 
   await page.getByRole("button", { name: "Submit" }).click();
 
@@ -53,7 +52,11 @@ export async function createPricingQueryLead(page: Page, browser: Browser) {
     username: data.fullName.split(" ")[0] + ".official",
   });
 
-  await page.locator("input[name='otp']").fill(otp);
+  const digits = otp.split("");
+  for (let i = 0; i < digits.length; i++) {
+    await page.locator(`#otp${i + 1}`).fill(digits[i]);
+  }
+
   await verifyButton.click();
 
   await expect(page.getByText("Sponsicore Pricing Plans")).toBeVisible();
@@ -137,14 +140,12 @@ export async function enterLeadPage(page: Page, data: ContactFormData) {
   await logIn(page);
 
   await page.goto("/lead");
-  // Check if navigation successfull.
-  await expect(page.getByText("Lead ID")).toBeVisible();
 
-  // Find the link to the lead in the row.
-  const row = page.getByRole("row", {
-    name: data.fullName.split(" ")[0],
-  });
-  await row.locator("a").first().click();
+  const searchInput = page.getByPlaceholder("Search...");
+  await searchInput.fill(data.fullName);
+  await searchInput.press("Enter");
+
+  await page.locator('a[title="Click for lead details"]').click();
 }
 
 export async function checkLeadHistory(
