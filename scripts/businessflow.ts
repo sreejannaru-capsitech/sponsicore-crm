@@ -1,22 +1,14 @@
 import { faker } from "@faker-js/faker";
-import { expect, Page } from "@playwright/test";
+import { Browser, expect, Page } from "@playwright/test";
+import { getDateDDMMYYYY } from "../utils/generators";
 import {
-  formatCurrencyGBP,
-  getDateDDMMYYYY,
-  slashToHyphen,
-} from "../utils/generators";
-import { logIn } from "../utils/helpers";
-import { acceptQuoteTempmail } from "../utils/mail-reader";
-
-type QuoteData = {
-  date: string;
-  start: string;
-  end: string;
-  emp: number;
-  amount: number;
-};
-
-export type QuoteType = "Create" | "Renew" | "Activate" | "Expand";
+  checkPaymentHistory,
+  logIn,
+  makeStripePayment,
+  sendPaymentEmail,
+  verifyPaymentInfo,
+} from "../utils/helpers";
+import { acceptQuoteTempmail, openInbox } from "../utils/mail-reader";
 
 export async function enterBusinessPage(page: Page, number: string | number) {
   await logIn(page);
@@ -112,20 +104,10 @@ export async function createQuoteInvoice(
 
 export async function verifyQuoteCreation(
   page: Page,
-  quote: "Create" | "Renew" | "Activate" | "Expand",
+  quote: QuoteType,
   data: QuoteData,
 ) {
-  // Calculations
-  const subTotal = formatCurrencyGBP(data.amount);
-  const vat = formatCurrencyGBP(data.amount * 0.2);
-  const total = formatCurrencyGBP(data.amount * 0.2 + data.amount);
-
-  // Go to History tab
-  await page.getByRole("tab", { name: "History" }).click();
-
-  await page.reload({ waitUntil: "networkidle" });
-  await expect(page.getByText("Quote Created").first()).toBeVisible();
-  await expect(page.getByText(total).first()).toBeVisible();
+  await checkPaymentHistory(page, true, data.amount, "create", quote);
 
   // Go to Quotes tab
   await page.getByRole("tab", { name: "Quotes" }).click();
@@ -135,26 +117,103 @@ export async function verifyQuoteCreation(
   await expect(quoteLink.first()).toBeVisible();
   await quoteLink.first().click();
 
-  // Quote date check
-  await expect(page.getByText(slashToHyphen(data.date))).toBeVisible();
-
-  const subscription = ` (${slashToHyphen(data.start)} - ${slashToHyphen(data.end)})`;
-
-  if (quote == "Expand") {
-    await expect(page.getByText(quote + " Team" + subscription)).toBeVisible();
-  } else if (quote == "Renew") {
-    await expect(
-      page.getByText(quote + " Subscription" + subscription),
-    ).toBeVisible();
-  } else {
-    await expect(
-      page.getByText(quote + " Company" + subscription),
-    ).toBeVisible();
-  }
-  // No. of employee
-  await expect(page.getByText(data.emp.toString())).toBeVisible();
-  // Money check
-  await expect(page.getByText(subTotal).first()).toBeVisible();
-  await expect(page.getByText(vat).first()).toBeVisible();
-  await expect(page.getByText(total).first()).toBeVisible();
+  await verifyPaymentInfo(page, quote, data, true, false);
 }
+
+export async function quoteToInvoice(
+  page: Page,
+  quote: QuoteType,
+  data: QuoteData,
+  username: string,
+  browser: Browser,
+) {
+  // Go to Quotes tab
+  await page.getByRole("tab", { name: "Quotes" }).click();
+
+  await sendPaymentEmail(page, true);
+
+  await acceptQuoteTempmail(browser, { username }, data, quote);
+
+  await checkPaymentHistory(page, true, data.amount, "accept", quote);
+}
+
+export const verifyInvoicePay = async (
+  page: Page,
+  quote: QuoteType,
+  data: QuoteData,
+  browser: Browser,
+  username: string = "",
+  isStripe: boolean = false,
+  makePayment: boolean = false,
+) => {
+  await page.getByRole("tab", { name: "Invoices" }).click();
+
+  const invoiceLink = page.locator('span[title="Click for invoice details"]');
+  // Ensure quote row exists
+  await expect(invoiceLink.first()).toBeVisible();
+  await invoiceLink.first().click();
+
+  await verifyPaymentInfo(page, quote, data, true, true);
+  // Close the drawer
+  await page
+    .getByRole("dialog")
+    .getByRole("button", { name: "close" })
+    .click({ force: true });
+
+  if (!makePayment) return;
+
+  if (isStripe) {
+    await sendPaymentEmail(page, false);
+
+    const inbox = await openInbox(browser, { username });
+
+    try {
+      // Open latest email
+      await inbox.page.getByText("Complete Your Payment").first().click();
+
+      const [popup] = await Promise.allSettled([
+        inbox.context.waitForEvent("page"),
+        inbox.page.getByText("Pay Now").click({ force: true }),
+      ]);
+      const invoicePage =
+        popup.status === "fulfilled" ? popup.value : inbox.page;
+      await invoicePage.waitForLoadState("domcontentloaded");
+
+      await verifyPaymentInfo(invoicePage, quote, data, false, true);
+
+      await makeStripePayment(invoicePage);
+    } finally {
+      await inbox.context.close();
+    }
+
+    await checkPaymentHistory(
+      page,
+      false,
+      data.amount,
+      "stripe",
+      quote,
+      data.emp,
+    );
+  } else {
+    await page
+      .locator("span.ant-dropdown-trigger")
+      .first()
+      .click({ force: true });
+
+    await page
+      .locator(".ant-dropdown-menu")
+      .getByText("Mark As Paid", { exact: true })
+      .click();
+    await page.locator("#onb-notify-form_remark").fill("Client gave us coins.");
+    await page.getByRole("button", { name: "Save" }).click();
+    await expect(page.getByText("Marked as paid successfully")).toBeVisible();
+    await checkPaymentHistory(
+      page,
+      false,
+      data.amount,
+      "marked",
+      quote,
+      data.emp,
+    );
+  }
+};
