@@ -29,44 +29,48 @@ export async function businessAlreadyExists(page: Page): Promise<boolean> {
 }
 
 export const sendPaymentEmail = async (page: Page, isQuote: boolean) => {
-  await page
-    .locator("span.ant-dropdown-trigger")
-    .first()
-    .click({ force: true });
+  const trigger = page.locator("span.ant-dropdown-trigger").first();
+  await trigger.hover();
+
+  const menu = page.locator(".ant-dropdown-menu:visible");
+  await menu.waitFor({ state: "visible" });
 
   await page
-    .locator(".ant-dropdown-menu")
-    .getByText(isQuote ? "Send Email" : "Send Stripe Payment Mail", {
-      exact: true,
+    .getByRole("menuitem", {
+      name: isQuote ? "Send Email" : "Send Stripe Payment Mail",
     })
     .click();
-
-  await page.waitForTimeout(2000);
 
   await page.getByRole("button", { name: "Send", exact: true }).click();
 
   await expect(
     page.getByText(
-      isQuote ? "Quote" : "Invoice payment" + " email sent successfully",
+      `${isQuote ? "Quote" : "Invoice payment"} email sent successfully`,
     ),
   ).toBeVisible({ timeout: 20000 });
 };
 
 export async function drawOnCanvas(page: Page, canvasSelector = "canvas") {
   const canvas = page.locator(canvasSelector);
-  const box = await canvas.boundingBox();
 
+  // Ensure canvas is visible and stable
+  await canvas.scrollIntoViewIfNeeded();
+  await canvas.waitFor({ state: "visible" });
+
+  const box = await canvas.boundingBox();
   if (!box) throw new Error("Canvas not visible");
 
-  const x = box.x + box.width / 4;
-  const y = box.y + box.height / 2;
+  // Start INSIDE canvas with padding
+  const startX = box.x + box.width * 0.2;
+  const startY = box.y + box.height * 0.5;
 
-  await page.mouse.move(x, y);
+  await page.mouse.move(startX, startY);
   await page.mouse.down();
 
-  await page.mouse.move(x + 40, y - 10, { steps: 4 });
-  await page.mouse.move(x + 80, y + 10, { steps: 4 });
-  await page.mouse.move(x + 120, y - 5, { steps: 4 });
+  // Keep all moves strictly inside canvas bounds
+  await page.mouse.move(startX + box.width * 0.1, startY - 10, { steps: 5 });
+  await page.mouse.move(startX + box.width * 0.2, startY + 10, { steps: 5 });
+  await page.mouse.move(startX + box.width * 0.3, startY - 5, { steps: 5 });
 
   await page.mouse.up();
 }
