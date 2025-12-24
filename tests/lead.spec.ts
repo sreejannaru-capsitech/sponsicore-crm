@@ -1,17 +1,12 @@
 import { expect, test } from "@playwright/test";
 import { faker } from "@faker-js/faker";
+import { logIn } from "../utils/helpers";
 
 test.describe("CRM Panel", () => {
   let leadName: string;
 
   test.beforeEach(async ({ page }) => {
-    await page.goto("/login");
-    await page.getByLabel("Username").fill(process.env.ADMIN_USERNAME);
-    await page.getByLabel("Password").fill(process.env.ADMIN_PASSWORD);
-    await Promise.all([
-      page.waitForURL("**/dashboard"),
-      page.locator("//span[normalize-space()='Login']").click(),
-    ]);
+    await logIn(page);
   });
 
   test("Create Lead", async ({ page }) => {

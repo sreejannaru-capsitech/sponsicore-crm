@@ -11,6 +11,10 @@ export async function logIn(page: Page) {
   ]);
 }
 
+export const closeNotification = async (page: Page) => {
+  await page.locator("a.ant-notification-notice-close").click();
+};
+
 export async function businessAlreadyExists(page: Page): Promise<boolean> {
   try {
     await page

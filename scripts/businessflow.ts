@@ -3,6 +3,7 @@ import { Browser, expect, Page } from "@playwright/test";
 import { getDateDDMMYYYY } from "../utils/generators";
 import {
   checkPaymentHistory,
+  closeNotification,
   logIn,
   makeStripePayment,
   sendPaymentEmail,
@@ -154,6 +155,7 @@ export const verifyInvoicePay = async (
   await invoiceLink.first().click();
 
   await verifyPaymentInfo(page, quote, data, true, true);
+  await closeNotification(page);
   // Close the drawer
   await page
     .getByRole("dialog")

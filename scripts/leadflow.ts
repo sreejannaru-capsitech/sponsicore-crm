@@ -6,7 +6,11 @@ import {
   generateUkCompanyNumber,
 } from "../utils/generators";
 import { readOtpFromTempmail } from "../utils/mail-reader";
-import { businessAlreadyExists, logIn } from "../utils/helpers";
+import {
+  businessAlreadyExists,
+  closeNotification,
+  logIn,
+} from "../utils/helpers";
 
 const pageURL = process.env.WEBSITE_URL;
 
@@ -200,7 +204,7 @@ export async function updateFollowup(page: Page) {
   ];
 
   await page.getByText(faker.helpers.arrayElement(options)).click();
-  await page.locator("a.ant-notification-notice-close").click();
+  await closeNotification(page);
   await checkLeadHistory(page, "Follow-Up");
 }
 
@@ -214,7 +218,7 @@ export async function updateCallback(page: Page) {
 
   await page.locator("#internal-callback_note").fill(faker.lorem.sentence(10));
   await page.getByRole("button", { name: "Save" }).click();
-  await page.locator("a.ant-notification-notice-close").click();
+  await closeNotification(page);
   await checkLeadHistory(page, "Callback");
 }
 
@@ -268,7 +272,7 @@ export async function changeStatus(
         await page.getByRole("button", { name: "Save" }).click();
         // Now check if company is already exists in portal
         if (await businessAlreadyExists(page)) {
-          await page.locator("a.ant-notification-notice-close").click();
+          await closeNotification(page);
           continue; // Skip iteration and retry
         }
         success = true;
