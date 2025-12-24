@@ -4,7 +4,6 @@ import { getDateDDMMYYYY } from "../utils/generators";
 import {
   checkPaymentHistory,
   closeNotification,
-  logIn,
   makeStripePayment,
   sendPaymentEmail,
   verifyPaymentInfo,
@@ -12,8 +11,6 @@ import {
 import { acceptQuoteTempmail, openInbox } from "../utils/mail-reader";
 
 export async function enterBusinessPage(page: Page, number: string | number) {
-  await logIn(page);
-
   await page.goto("/business");
   // Check if navigation successfull.
   await expect(page.getByText("Business ID")).toBeVisible();
@@ -119,6 +116,12 @@ export async function verifyQuoteCreation(
   await quoteLink.first().click();
 
   await verifyPaymentInfo(page, quote, data, true, false);
+
+  // Close the drawer
+  await page
+    .getByRole("dialog")
+    .getByRole("button", { name: "close" })
+    .click({ force: true });
 }
 
 export async function quoteToInvoice(
@@ -155,7 +158,6 @@ export const verifyInvoicePay = async (
   await invoiceLink.first().click();
 
   await verifyPaymentInfo(page, quote, data, true, true);
-  await closeNotification(page);
   // Close the drawer
   await page
     .getByRole("dialog")

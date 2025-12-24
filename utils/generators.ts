@@ -14,6 +14,10 @@ export function generateContactFormData(): ContactFormData {
   };
 }
 
+export const trueFalse = () => {
+  return faker.datatype.boolean();
+};
+
 export function formatDateTime(): string {
   const now = new Date();
   const twoWeeksLater = new Date();
