@@ -21,37 +21,33 @@ import { getUsername, logIn } from "../utils/helpers";
 import { trueFalse } from "../utils/generators";
 import { verifyClientCreation } from "../scripts/clientflow";
 
-// test.describe("Create Leads from Website", () => {
-//   test("Contact lead", async ({ page }) => {
-//     const data = await createContactQueryLead(page);
-//     await logIn(page);
-//     await enterLeadPage(page, data);
-//     await checkLeadHistory(page, "create");
-//   });
+test.describe("Create Leads from Website", () => {
+  test("Contact lead", async ({ page }) => {
+    const data = await createContactQueryLead(page);
+    await logIn(page);
+    await enterLeadPage(page, data);
+    await checkLeadHistory(page, "create");
+  });
 
-//   test("Pricing lead", async ({ page, browser }) => {
-//     const data = await createPricingQueryLead(page, browser);
-//     await logIn(page);
-//     await enterLeadPage(page, data.data);
-//     await checkLeadHistory(page, "create");
-//   });
+  test("Pricing lead", async ({ page, browser }) => {
+    const data = await createPricingQueryLead(page, browser);
+    await logIn(page);
+    await enterLeadPage(page, data.data);
+    await checkLeadHistory(page, "create");
+  });
 
-//   test("Compliance lead", async ({ page, browser }) => {
-//     const data = await createComplianceTestLead(page, browser);
-//     await logIn(page);
-//     await enterLeadPage(page, data);
-//     await checkLeadHistory(page, "create");
-//   });
-// });
+  test("Compliance lead", async ({ page, browser }) => {
+    const data = await createComplianceTestLead(page, browser);
+    await logIn(page);
+    await enterLeadPage(page, data);
+    await checkLeadHistory(page, "create");
+  });
+});
 
 test.describe("Company creation from Lead", () => {
   test.beforeEach(async ({ page }) => {
     await logIn(page);
   });
-
-  // test("Test", async ({ page }) => {
-  //   await logIn(page);
-  // });
 
   test("Quote Invoice Creation", async ({ page, browser }) => {
     test.setTimeout(100_000);
