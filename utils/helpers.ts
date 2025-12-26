@@ -45,7 +45,9 @@ export const sendPaymentEmail = async (page: Page, isQuote: boolean) => {
     })
     .click();
 
-  await page.getByRole("button", { name: "Send", exact: true }).click();
+  const sendButton = page.getByRole("button", { name: "Send", exact: true });
+  await expect(sendButton).toBeEnabled();
+  await sendButton.click();
 
   await expect(
     page.getByText(
