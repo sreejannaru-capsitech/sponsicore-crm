@@ -6,7 +6,11 @@ import {
   generateUkCompanyNumber,
 } from "../utils/generators";
 import { readOtpFromTempmail } from "../utils/mail-reader";
-import { businessAlreadyExists, closeNotification, getUsername } from "../utils/helpers";
+import {
+  businessAlreadyExists,
+  closeNotification,
+  getUsername,
+} from "../utils/helpers";
 
 const pageURL = process.env.WEBSITE_URL;
 
@@ -171,12 +175,12 @@ export async function createPortalLead(page: Page) {
   // Select First Response
   await page.locator("#edit-lead-form_firstResponse").click();
   const firstResponse = faker.helpers.arrayElement([
-    // "Avik Sain",
-    // "Debanik Saha",
-    // "Himanshu Sharma",
-    // "Lead Manager",
-    // "Natasha Romanoff",
-    // "Sreejan Naru",
+    "Avik Sain",
+    "Debanik Saha",
+    "Himanshu Sharma",
+    "Lead Manager",
+    "Natasha Romanoff",
+    "Sreejan Naru",
     "Subhajit Kar",
   ]);
 
@@ -184,34 +188,46 @@ export async function createPortalLead(page: Page) {
     .locator(".rc-virtual-list")
     .filter({ hasNotText: "Web" });
 
-  // Scroll through the dropdown to find the desired option.
   await dropdown.evaluate(async (el, text) => {
-    const container = el.querySelector(
-      ".ant-select-dropdown-content, .rc-virtual-list-holder",
-    );
+    const container =
+      el.querySelector(".rc-virtual-list-holder") ||
+      el.querySelector(".ant-select-dropdown-content");
 
     if (!container) return;
 
+    const findOption = () =>
+      Array.from(el.querySelectorAll(".ant-select-item-option-content")).find(
+        (n) => n.textContent?.trim() === text,
+      );
+
+    // 1. FIRST check without scrolling
+    let option = findOption();
+    if (option) {
+      option.scrollIntoView({ block: "nearest" });
+      return;
+    }
+
+    // 2. Then scroll and search
     let lastScrollTop = -1;
 
     while (container.scrollTop !== lastScrollTop) {
       lastScrollTop = container.scrollTop;
       container.scrollTop += 200;
+
       await new Promise((r) => setTimeout(r, 100));
 
-      const option = Array.from(
-        el.querySelectorAll(".ant-select-item-option-content"),
-      ).find((n) => n.textContent?.trim() === text);
-
+      option = findOption();
       if (option) {
-        option.scrollIntoView();
+        option.scrollIntoView({ block: "nearest" });
         return;
       }
     }
   }, firstResponse);
 
+  // Final click (Playwright side)
   await page
     .locator(".ant-select-item-option-content", { hasText: firstResponse })
+    .first()
     .click();
 
   // Hit Save
