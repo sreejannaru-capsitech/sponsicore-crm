@@ -153,6 +153,7 @@ export async function createPortalLead(page: Page) {
   // Enter email
   await page.locator("#edit-lead-form_emailList_0_email").fill(data.email);
   await page.locator("#edit-lead-form_note").fill(data.message);
+  await page.locator("input[type='tel']").fill(data.phone);
 
   // Select a Mode
   await page.locator("#edit-lead-form_mode").click();

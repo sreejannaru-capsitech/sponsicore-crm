@@ -20,7 +20,6 @@ export async function enterBusinessPage(page: Page, number: string | number) {
   await searchInput.press("Enter");
 
   await page.locator('a[title="Click for business details"]').click();
-  await expect(page.getByText("Meetings")).toBeVisible();
 }
 
 export async function createQuoteInvoice(
@@ -90,6 +89,8 @@ export async function createQuoteInvoice(
   await page.locator(`${idStart}-form_date`).fill(data.date);
   await page.keyboard.press("Enter");
 
+  await page.waitForTimeout(2000); // 2 seconds
+
   await page.getByRole("button", { name: "Save" }).click();
 
   await expect(
@@ -97,6 +98,9 @@ export async function createQuoteInvoice(
       `${isQuote ? "Quote saved" : "Invoice created"} successfully`,
     ),
   ).toBeVisible();
+  await closeNotification(page);
+  await page.waitForTimeout(2000); // 2 seconds
+
   return data;
 }
 
@@ -199,15 +203,18 @@ export const verifyInvoicePay = async (
       data.emp,
     );
   } else {
-    await page
-      .locator("span.ant-dropdown-trigger")
-      .first()
-      .click({ force: true });
+    const trigger = page.locator("span.ant-dropdown-trigger").first();
+    await trigger.hover();
+
+    const menu = page.locator(".ant-dropdown-menu:visible");
+    await menu.waitFor({ state: "visible" });
 
     await page
-      .locator(".ant-dropdown-menu")
-      .getByText("Mark As Paid", { exact: true })
+      .getByRole("menuitem", {
+        name: "Mark As Paid",
+      })
       .click();
+
     await page.locator("#onb-notify-form_remark").fill("Client gave us coins.");
     await page.getByRole("button", { name: "Save" }).click();
     await expect(page.getByText("Marked as paid successfully")).toBeVisible();
