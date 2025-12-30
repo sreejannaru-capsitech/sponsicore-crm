@@ -1,4 +1,4 @@
-import { test } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 import {
   createContactQueryLead,
   createPricingQueryLead,
@@ -11,6 +11,7 @@ import {
   createPortalLead,
 } from "../scripts/leadflow";
 import {
+  createPortalBusiness,
   createQuoteInvoice,
   enterBusinessPage,
   quoteToInvoice,
@@ -105,5 +106,23 @@ test.describe("Company creation from Lead", () => {
     if (makePayment) {
       await verifyClientCreation(page, company);
     }
+  });
+});
+
+test.describe("Portal Business Creation", () => {
+  test.beforeEach(async ({ page }) => {
+    await logIn(page);
+  });
+
+  test("Create Portal Business", async ({ page }) => {
+    test.setTimeout(100_000);
+
+    const company = await createPortalBusiness(page);
+    await enterBusinessPage(page, company);
+
+    await expect(
+      page.getByText("Business Created from Company House:"),
+    ).toBeVisible();
+    await expect(page.getByText(`- Company Number: ${company}`)).toBeVisible();
   });
 });

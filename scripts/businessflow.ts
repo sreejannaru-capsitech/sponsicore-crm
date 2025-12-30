@@ -1,10 +1,16 @@
 import { faker } from "@faker-js/faker";
 import { Browser, expect, Page } from "@playwright/test";
-import { getDateDDMMYYYY } from "../utils/generators";
 import {
+  generateContactFormData,
+  getDateDDMMYYYY,
+  trueFalse,
+} from "../utils/generators";
+import {
+  businessChoose,
   checkPaymentHistory,
   closeNotification,
   makeStripePayment,
+  selectFirstResponse,
   sendPaymentEmail,
   verifyPaymentInfo,
 } from "../utils/helpers";
@@ -227,4 +233,51 @@ export const verifyInvoicePay = async (
       data.emp,
     );
   }
+};
+
+export const createPortalBusiness = async (page: Page) => {
+  const data = generateContactFormData();
+
+  await page.goto("/business");
+  await page.getByRole("button", { name: "Add New" }).click();
+
+  await page.locator("#edit-basic-info_type").click();
+  const businessType = faker.helpers.arrayElement([
+    "LLP",
+    "Limited",
+    "Individual",
+    "Partnership",
+    "Limited Partnership",
+  ]);
+  await page.getByText(businessType, { exact: true }).click();
+
+  // Select First Response
+  await page.locator("#edit-basic-info_firstResponse").click();
+  await selectFirstResponse(page);
+
+  await page
+    .locator("#edit-basic-info_name_first")
+    .fill(data.fullName.split(" ")[0]);
+  await page
+    .locator("#edit-basic-info_name_last")
+    .fill(data.fullName.split(" ")[1]);
+
+  await page.locator("#edit-basic-info_email").fill(data.email);
+  await page.locator("input[type='tel']").fill(data.phone);
+
+  if (true) {
+    await page.locator("input[type='checkbox']").click();
+    await page.locator("#edit-basic-info_allowedEmps").fill(data.employees);
+
+    await page.locator(`#edit-basic-info_subscriptionPeriod`).click();
+    // Subscription period
+    await page
+      .locator(`#edit-basic-info_subscriptionPeriod`)
+      .fill(getDateDDMMYYYY("past"));
+    await page.keyboard.press("Enter");
+    await page.keyboard.type(getDateDDMMYYYY("future"));
+    await page.keyboard.press("Enter");
+  }
+
+  return await businessChoose(page, "edit-basic-info_companyNumber");
 };
