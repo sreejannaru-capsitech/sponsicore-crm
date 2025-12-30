@@ -1,5 +1,10 @@
-import { expect, Page } from "@playwright/test";
-import { formatCurrencyGBP, slashToHyphen } from "../utils/generators";
+import { faker } from "@faker-js/faker";
+import { expect, Locator, Page } from "@playwright/test";
+import {
+  formatCurrencyGBP,
+  generateUkCompanyNumber,
+  slashToHyphen,
+} from "../utils/generators";
 
 export async function logIn(page: Page) {
   await page.goto("/login");
@@ -17,6 +22,105 @@ export const closeNotification = async (page: Page) => {
 
 export const getUsername = (data: ContactFormData) => {
   return data.fullName.split(" ")[0] + ".official";
+};
+
+export const selectFirstResponse = async (page: Page) => {
+  const firstResponse = faker.helpers.arrayElement([
+    "Avik Sain",
+    "Debanik Saha",
+    "Himanshu Sharma",
+    "Lead Manager",
+    "Natasha Romanoff",
+    "Sreejan Naru",
+    "Subhajit Kar",
+  ]);
+
+  const dropdown = page.locator(".rc-virtual-list").filter({
+    hasNotText: /Web|LLP|API/i,
+  });
+
+  await dropdown.evaluate(async (el, text) => {
+    const container =
+      el.querySelector(".rc-virtual-list-holder") ||
+      el.querySelector(".ant-select-dropdown-content");
+
+    if (!container) return;
+
+    const findOption = () =>
+      Array.from(el.querySelectorAll(".ant-select-item-option-content")).find(
+        (n) => n.textContent?.trim() === text,
+      );
+
+    // 1. FIRST check without scrolling
+    let option = findOption();
+    if (option) {
+      option.scrollIntoView({ block: "nearest" });
+      return;
+    }
+
+    // 2. Then scroll and search
+    let lastScrollTop = -1;
+
+    while (container.scrollTop !== lastScrollTop) {
+      lastScrollTop = container.scrollTop;
+      container.scrollTop += 200;
+
+      await new Promise((r) => setTimeout(r, 100));
+
+      option = findOption();
+      if (option) {
+        option.scrollIntoView({ block: "nearest" });
+        return;
+      }
+    }
+  }, firstResponse);
+
+  // Final click (Playwright side)
+  await page
+    .locator(".ant-select-item-option-content", { hasText: firstResponse })
+    .first()
+    .click();
+};
+
+export const businessChoose = async (page: Page, id: string) => {
+  let companyNo: string;
+  let success = false;
+  const select = page.locator(`#${id}`);
+
+  while (!success) {
+    companyNo = generateUkCompanyNumber();
+    // Open dropdown
+    await select.click();
+    // Clear previous input (important for AntD)
+    await page.keyboard.press("Control+A");
+    await page.keyboard.press("Backspace");
+
+    // Type new value
+    await page.keyboard.type(companyNo);
+
+    // Locator for option with exact text
+    const option = page.getByRole("option", { name: companyNo });
+    await page.waitForTimeout(300);
+
+    if ((await option.count()) > 0) {
+      await page.keyboard.press("ArrowDown");
+      await page.keyboard.press("Enter");
+
+      // Click Save
+      await page.getByRole("button", { name: "Save" }).click();
+      // Now check if company is already exists in portal
+      if (await businessAlreadyExists(page)) {
+        await closeNotification(page);
+        continue; // Skip iteration and retry
+      }
+      success = true;
+    } else {
+      // Close dropdown before retry
+      await page.keyboard.press("Escape");
+    }
+  }
+
+  return companyNo;
 };
 
 export async function businessAlreadyExists(page: Page): Promise<boolean> {

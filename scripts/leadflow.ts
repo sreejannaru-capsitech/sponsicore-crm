@@ -8,8 +8,10 @@ import {
 import { readOtpFromTempmail } from "../utils/mail-reader";
 import {
   businessAlreadyExists,
+  businessChoose,
   closeNotification,
   getUsername,
+  selectFirstResponse,
 } from "../utils/helpers";
 
 const pageURL = process.env.WEBSITE_URL;
@@ -175,61 +177,7 @@ export async function createPortalLead(page: Page) {
 
   // Select First Response
   await page.locator("#edit-lead-form_firstResponse").click();
-  const firstResponse = faker.helpers.arrayElement([
-    "Avik Sain",
-    "Debanik Saha",
-    "Himanshu Sharma",
-    "Lead Manager",
-    "Natasha Romanoff",
-    "Sreejan Naru",
-    "Subhajit Kar",
-  ]);
-
-  const dropdown = page
-    .locator(".rc-virtual-list")
-    .filter({ hasNotText: "Web" });
-
-  await dropdown.evaluate(async (el, text) => {
-    const container =
-      el.querySelector(".rc-virtual-list-holder") ||
-      el.querySelector(".ant-select-dropdown-content");
-
-    if (!container) return;
-
-    const findOption = () =>
-      Array.from(el.querySelectorAll(".ant-select-item-option-content")).find(
-        (n) => n.textContent?.trim() === text,
-      );
-
-    // 1. FIRST check without scrolling
-    let option = findOption();
-    if (option) {
-      option.scrollIntoView({ block: "nearest" });
-      return;
-    }
-
-    // 2. Then scroll and search
-    let lastScrollTop = -1;
-
-    while (container.scrollTop !== lastScrollTop) {
-      lastScrollTop = container.scrollTop;
-      container.scrollTop += 200;
-
-      await new Promise((r) => setTimeout(r, 100));
-
-      option = findOption();
-      if (option) {
-        option.scrollIntoView({ block: "nearest" });
-        return;
-      }
-    }
-  }, firstResponse);
-
-  // Final click (Playwright side)
-  await page
-    .locator(".ant-select-item-option-content", { hasText: firstResponse })
-    .first()
-    .click();
+  await selectFirstResponse(page);
 
   // Hit Save
   await page.getByRole("button", { name: "Save" }).click();
@@ -349,41 +297,7 @@ export async function changeStatus(
     await select.click();
     await select.press("Enter");
 
-    let success = false;
-    while (!success) {
-      companyNo = generateUkCompanyNumber();
-
-      // Open dropdown
-      const b_select = page.locator("#change-lead-status-form_companyNo");
-      await b_select.click();
-      // Clear previous input (important for AntD)
-      await page.keyboard.press("Control+A");
-      await page.keyboard.press("Backspace");
-
-      // Type new value
-      await page.keyboard.type(companyNo);
-
-      // Locator for option with exact text
-      const option = page.getByRole("option", { name: companyNo });
-      await page.waitForTimeout(300);
-
-      if ((await option.count()) > 0) {
-        await page.keyboard.press("ArrowDown");
-        await page.keyboard.press("Enter");
-
-        // Click Save
-        await page.getByRole("button", { name: "Save" }).click();
-        // Now check if company is already exists in portal
-        if (await businessAlreadyExists(page)) {
-          await closeNotification(page);
-          continue; // Skip iteration and retry
-        }
-        success = true;
-      } else {
-        // Close dropdown before retry
-        await page.keyboard.press("Escape");
-      }
-    }
+    companyNo = await businessChoose(page, "change-lead-status-form_companyNo");
   }
 
   return companyNo;
