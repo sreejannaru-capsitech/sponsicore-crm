@@ -265,7 +265,7 @@ export const createPortalBusiness = async (page: Page) => {
   await page.locator("#edit-basic-info_email").fill(data.email);
   await page.locator("input[type='tel']").fill(data.phone);
 
-  if (true) {
+  if (trueFalse()) {
     await page.locator("input[type='checkbox']").click();
     await page.locator("#edit-basic-info_allowedEmps").fill(data.employees);
 
@@ -279,5 +279,7 @@ export const createPortalBusiness = async (page: Page) => {
     await page.keyboard.press("Enter");
   }
 
-  return await businessChoose(page, "edit-basic-info_companyNumber");
+  const cmp = await businessChoose(page, "edit-basic-info_companyNumber");
+
+  return { cmp, email: data.email };
 };

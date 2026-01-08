@@ -57,8 +57,10 @@ export function getDateDDMMYYYY(
 ): string {
   const date = new Date();
 
+  // Ensure offset is in [1, daysRange]
   const offset =
-    Math.floor(Math.random() * daysRange) * (direction === "future" ? 1 : -1);
+    (Math.floor(Math.random() * daysRange) + 1) *
+    (direction === "future" ? 1 : -1);
 
   date.setDate(date.getDate() + offset);
 
