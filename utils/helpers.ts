@@ -1,5 +1,5 @@
 import { faker } from "@faker-js/faker";
-import { expect, Locator, Page } from "@playwright/test";
+import { expect, Page } from "@playwright/test";
 import {
   formatCurrencyGBP,
   generateUkCompanyNumber,
@@ -15,6 +15,32 @@ export async function logIn(page: Page) {
     page.locator("//span[normalize-space()='Login']").click(),
   ]);
 }
+
+export const loginClient = async (
+  page: Page,
+  username: string,
+  password: string,
+  isAllowed: boolean,
+) => {
+  const newPage = await page.context().newPage();
+
+  await newPage.goto("https://appuat.sponsicore.com/login");
+  await newPage.getByLabel("Username").fill(username);
+  await newPage.getByLabel("Password").fill(password);
+
+  if (isAllowed) {
+    await Promise.all([
+      newPage.waitForURL("**/dashboard"),
+      newPage.locator("//span[normalize-space()='Login']").click(),
+    ]);
+    await expect(newPage.getByText("Welcome")).toBeVisible();
+  } else {
+    await newPage.locator("//span[normalize-space()='Login']").click();
+    await expect(newPage.getByText("Company does not exist")).toBeVisible();
+  }
+
+  await newPage.close(); // Close the page
+};
 
 export const closeNotification = async (page: Page) => {
   await page.locator("a.ant-notification-notice-close").click();
