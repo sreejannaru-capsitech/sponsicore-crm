@@ -220,8 +220,9 @@ export const verifyPaymentInfo = async (
 ) => {
   // Calculations
   const subTotal = formatCurrencyGBP(data.amount);
-  const vat = formatCurrencyGBP(data.amount * 0.2);
-  const total = formatCurrencyGBP(data.amount * 0.2 + data.amount);
+  const amount = data.isDiscount ? data.amount - data.discount : data.amount;
+  const vat = formatCurrencyGBP(amount * 0.2);
+  const total = formatCurrencyGBP(amount * 0.2 + amount);
 
   // Date check
   await expect(
@@ -261,6 +262,11 @@ export const verifyPaymentInfo = async (
   await expect(entity.getByText(data.emp.toString()).first()).toBeVisible();
   // Money check
   await expect(entity.getByText(subTotal).first()).toBeVisible();
+  if (data.isDiscount) {
+    await expect(
+      entity.getByText(formatCurrencyGBP(data.discount)),
+    ).toBeVisible();
+  }
   await expect(entity.getByText(vat).first()).toBeVisible();
   await expect(entity.getByText(total).first()).toBeVisible();
 };

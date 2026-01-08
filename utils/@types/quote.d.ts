@@ -4,6 +4,9 @@ type QuoteData = {
   end: string;
   emp: number;
   amount: number;
+  isDiscount: boolean;
+  discount: number;
+  note: string;
 };
 
 type QuoteType = "Create" | "Renew" | "Activate" | "Expand";

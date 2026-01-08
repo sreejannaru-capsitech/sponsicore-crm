@@ -1,18 +1,17 @@
-import { expect, Page, Browser } from "@playwright/test";
 import { faker } from "@faker-js/faker";
+import { Browser, expect, Page } from "@playwright/test";
 import {
   formatDateTime,
   generateContactFormData,
-  generateUkCompanyNumber,
+  trueFalse,
 } from "../utils/generators";
-import { readOtpFromTempmail } from "../utils/mail-reader";
 import {
-  businessAlreadyExists,
   businessChoose,
   closeNotification,
   getUsername,
   selectFirstResponse,
 } from "../utils/helpers";
+import { readOtpFromTempmail } from "../utils/mail-reader";
 
 const pageURL = process.env.WEBSITE_URL;
 
@@ -64,7 +63,7 @@ export async function createPricingQueryLead(page: Page, browser: Browser) {
   await expect(page.getByText("Sponsicore Pricing Plans")).toBeVisible();
 
   // Random plan decision
-  if (faker.datatype.boolean()) {
+  if (trueFalse()) {
     await page.getByText("Proceed to Pay").click();
     return { data, plan: "annual" };
   } else {

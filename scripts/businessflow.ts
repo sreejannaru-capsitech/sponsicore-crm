@@ -71,12 +71,21 @@ export async function createQuoteInvoice(
   await page.keyboard.press("Enter");
   await page.keyboard.press("Enter");
 
+  const amount = faker.number.float({
+    min: 1,
+    max: 83333.33,
+    fractionDigits: 2,
+  });
+
   const data: QuoteData = {
     date: getDateDDMMYYYY("past", 7),
     start: getDateDDMMYYYY("past"),
     end: getDateDDMMYYYY("future"),
     emp: faker.number.int({ min: 10, max: 99999 }),
-    amount: faker.number.float({ min: 1, max: 83333.33, fractionDigits: 2 }),
+    amount: amount,
+    isDiscount: trueFalse(),
+    discount: faker.number.float({ min: 1, max: amount, fractionDigits: 2 }),
+    note: faker.lorem.sentence(3),
   };
 
   if (quote !== "Expand") {
@@ -96,6 +105,15 @@ export async function createQuoteInvoice(
   await page.keyboard.press("Enter");
 
   await page.waitForTimeout(2000); // 2 seconds
+
+  // Add discount
+  if (data.isDiscount) {
+    await page.locator(`${idStart}-form_isDiscount`).click();
+    await page
+      .locator(`${idStart}-form_discount`)
+      .fill(data.discount.toString());
+    await page.locator(`${idStart}-form_discountNote`).fill(data.note);
+  }
 
   await page.getByRole("button", { name: "Save" }).click();
 
