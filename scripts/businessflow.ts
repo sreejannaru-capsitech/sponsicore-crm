@@ -123,7 +123,6 @@ export async function createQuoteInvoice(
     ),
   ).toBeVisible();
   await closeNotification(page);
-  await page.waitForTimeout(2000); // 2 seconds
 
   return data;
 }
@@ -283,7 +282,8 @@ export const createPortalBusiness = async (page: Page) => {
   await page.locator("#edit-basic-info_email").fill(data.email);
   await page.locator("input[type='tel']").fill(data.phone);
 
-  if (trueFalse()) {
+  const isTrial = trueFalse();
+  if (isTrial) {
     await page.locator("input[type='checkbox']").click();
     await page.locator("#edit-basic-info_allowedEmps").fill(data.employees);
 
@@ -299,5 +299,28 @@ export const createPortalBusiness = async (page: Page) => {
 
   const cmp = await businessChoose(page, "edit-basic-info_companyNumber");
 
-  return { cmp, email: data.email };
+  return { cmp, email: data.email, isTrial };
+};
+
+export const chooseBusiness = async (page: Page) => {
+  await page.goto("/business?tagStatus=4");
+  // Enter the first business
+  await page.locator('a[title="Click for business details"]').first().click();
+
+  await page.getByRole("tab", { name: "Profile" }).click();
+
+  const email = await page
+    .getByText("Email", { exact: true })
+    .locator(
+      'xpath=ancestor::div[contains(@class,"ant-form-item-row")]//span[contains(text(),"@")]',
+    )
+    .innerText();
+
+  const companyNo = (await page
+    .getByRole("link", { name: "Click for company details" })
+    .getAttribute("href"))!
+    .split("/")
+    .pop();
+
+  return { cmp: companyNo, email };
 };

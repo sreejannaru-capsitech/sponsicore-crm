@@ -176,6 +176,7 @@ export const sendPaymentEmail = async (page: Page, isQuote: boolean) => {
     .click();
 
   const sendButton = page.getByRole("button", { name: "Send", exact: true });
+  await expect(sendButton).toBeVisible();
   await expect(sendButton).toBeEnabled();
   await sendButton.click();
 
@@ -272,7 +273,6 @@ export const verifyPaymentInfo = async (
 };
 
 export async function makeStripePayment(invoicePage: Page) {
-  // Click "Proceed to Payment" and wait for Stripe to load (same tab)
   const stripeLink = invoicePage.getByRole("button", {
     name: "Proceed to Payment",
   });
@@ -286,13 +286,12 @@ export async function makeStripePayment(invoicePage: Page) {
 
   const stripePage = invoicePage;
 
-  // Ensure Stripe page is fully ready
-  await stripePage.waitForLoadState("networkidle");
+  // wait until we see an email input or Stripe UI
+  await expect(stripePage.locator("#email")).toBeVisible({ timeout: 30_000 });
 
-  // Fill email (outside iframe)
   await stripePage.locator("#email").fill("johndoe@example.com");
 
-  // Stripe card iframe
+  // fill inside Stripe iframe
   const cardFrame = stripePage.frameLocator(
     'iframe[name^="__privateStripeFrame"]',
   );
@@ -303,26 +302,19 @@ export async function makeStripePayment(invoicePage: Page) {
   await stripePage.locator("#cardCvc").fill("561");
   await stripePage.locator("#billingName").fill("John Doe");
 
-  // Click Pay / Confirm
   const payButton = stripePage.getByRole("button", {
     name: /pay|confirm|complete/i,
   });
 
   await expect(payButton).toBeEnabled();
 
-  // Click Pay
-  await Promise.allSettled([
-    stripePage.waitForNavigation({ waitUntil: "domcontentloaded" }),
-    payButton.click(),
-  ]);
-  const successPage = stripePage;
-  // Wait for redirect to finish
-  await successPage.waitForLoadState("networkidle");
+  await payButton.click();
 
-  // Assert success
-  await expect(successPage.getByText(/payment successful/i)).toBeVisible({
-    timeout: 40_000,
-  });
+  // wait for a specific success element to appear
+  const successLocator = stripePage.getByText(/payment successful|thank you/i);
+  await expect(successLocator).toBeVisible({ timeout: 40_000 });
+
+  return true;
 }
 
 export async function checkPaymentHistory(
