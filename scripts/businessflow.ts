@@ -81,7 +81,7 @@ export async function createQuoteInvoice(
     date: getDateDDMMYYYY("past", 7),
     start: getDateDDMMYYYY("past"),
     end: getDateDDMMYYYY("future"),
-    emp: faker.number.int({ min: 10, max: 99999 }),
+    emp: faker.number.int({ min: 10, max: quote === "Expand" ? 200 : 99999 }),
     amount: amount,
     isDiscount: trueFalse(),
     discount: faker.number.float({ min: 1, max: amount, fractionDigits: 2 }),
@@ -132,7 +132,13 @@ export async function verifyQuoteCreation(
   quote: QuoteType,
   data: QuoteData,
 ) {
-  await checkPaymentHistory(page, true, data.amount, "create", quote);
+  await checkPaymentHistory(
+    page,
+    true,
+    data.isDiscount ? data.amount - data.discount : data.amount,
+    "create",
+    quote,
+  );
 
   // Go to Quotes tab
   await page.getByRole("tab", { name: "Quotes" }).click();
@@ -165,7 +171,13 @@ export async function quoteToInvoice(
 
   await acceptQuoteTempmail(browser, { username }, data, quote);
 
-  await checkPaymentHistory(page, true, data.amount, "accept", quote);
+  await checkPaymentHistory(
+    page,
+    true,
+    data.isDiscount ? data.amount - data.discount : data.amount,
+    "accept",
+    quote,
+  );
 }
 
 export const verifyInvoicePay = async (
@@ -220,7 +232,7 @@ export const verifyInvoicePay = async (
     await checkPaymentHistory(
       page,
       false,
-      data.amount,
+      data.isDiscount ? data.amount - data.discount : data.amount,
       "stripe",
       quote,
       data.emp,
@@ -244,7 +256,7 @@ export const verifyInvoicePay = async (
     await checkPaymentHistory(
       page,
       false,
-      data.amount,
+      data.isDiscount ? data.amount - data.discount : data.amount,
       "marked",
       quote,
       data.emp,
