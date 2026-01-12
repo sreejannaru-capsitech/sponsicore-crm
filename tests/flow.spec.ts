@@ -10,6 +10,7 @@ import {
 } from "../scripts/businessflow";
 import {
   editClientSubscription,
+  extractClientDetails,
   openClientPage,
   verifyClientStatus,
 } from "../scripts/clientflow";
@@ -153,11 +154,37 @@ test.describe("Subscription Status Test", () => {
     await logIn(page);
   });
 
-  test("Edit Subscription Status", async ({ page }) => {
+  test("Overdue Subscription", async ({ page }) => {
     test.setTimeout(100_000);
     const { cmp, email } = await chooseBusiness(page);
     const clientPage = await openClientPage(page, cmp);
     await editClientSubscription(clientPage, email, true);
     await editClientSubscription(clientPage, email, false);
+  });
+
+  test("Expand Team Size", async ({ page, browser }) => {
+    test.setTimeout(100_000);
+    const { cmp, email } = await chooseBusiness(page);
+    const clientPage = await openClientPage(page, cmp);
+    const old = await extractClientDetails(clientPage);
+
+    await enterBusinessPage(page, cmp);
+    const data = await createQuoteInvoice(page, "Expand", false, false);
+    // Expand team does not change subscription period
+    data.start = old.startDate;
+    data.end = old.endDate;
+    await verifyInvoicePay(
+      page,
+      "Expand",
+      data,
+      browser,
+      email.split("@")[0],
+      trueFalse(),
+      true,
+    );
+
+    await clientPage.reload({ waitUntil: "networkidle" }); // Reload client page
+    const newDetails = await extractClientDetails(clientPage);
+    expect(newDetails.count).toBe(old.count + data.emp);
   });
 });
