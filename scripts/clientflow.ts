@@ -44,6 +44,43 @@ export const verifyClientStatus = async (
   return newPage;
 };
 
+export const extractClientDetails = async (page: Page) => {
+  // Go to the Subscription tab
+  await page.getByRole("tab", { name: "Subscription" }).click();
+
+  /* ---------- Allowed Employees ---------- */
+
+  const allowedEmployees = page
+    .locator("span", { hasText: "Allowed Employees" })
+    .locator("xpath=../../div[2]//span");
+
+  // Wait until value is populated (not just label visible)
+  await expect(allowedEmployees).toHaveText(/\d+/, {
+    timeout: 20_000,
+  });
+
+  const count = Number((await allowedEmployees.textContent())?.trim());
+
+  /* ---------- Subscription Period ---------- */
+
+  const subscriptionContainer = page
+    .locator("span", { hasText: "Subscription Period" })
+    .locator("xpath=../../div[2]");
+
+  // Read full text and extract dates reliably
+  const text = await subscriptionContainer.innerText();
+
+  const dates = text.match(/\d{2}\/\d{2}\/\d{4}/g) ?? [];
+
+  if (dates.length !== 2) {
+    throw new Error(`Expected 2 dates, found: ${dates}`);
+  }
+
+  const [startDate, endDate] = dates;
+
+  return { count, startDate, endDate };
+};
+
 export const editClientSubscription = async (
   page: Page,
   useremail: string,
@@ -53,13 +90,6 @@ export const editClientSubscription = async (
   await page.getByRole("tab", { name: "Subscription" }).click();
 
   await page.locator('button[title="Edit"]').click();
-
-  // const allowedEmployees = page
-  //   .locator('span', { hasText: 'Allowed Employees' })
-  //   .locator('xpath=../../div[2]//span');
-
-  // const countText = await allowedEmployees.textContent();
-  // const count = Number(countText?.trim());
 
   const emp_no = faker.number.int({ min: 10, max: 100 }).toString();
   await page.locator("#update-subscription-form_allowedEmps").fill(emp_no);
